@@ -129,26 +129,7 @@ pub fn part_two(input: &str) -> Option<usize> {
 
     let mut guard = find_guard(&input);
 
-    let mut guard_trace = HashSet::new();
-    guard_trace.insert(guard);
-    loop {
-        if guard_at_border(&input, &guard)
-        {
-            guard_trace.remove(&guard);
-            break;
-        }
-
-        let (next_row, next_column) = guard.next_pos();
-
-        if input[next_row][next_column] == '#' {
-            guard.direction = guard.direction.turn_right()
-        } else {
-            guard.row = next_row;
-            guard.column = next_column;
-            guard_trace.insert(guard);
-        }
-    }
-    let guard_trace = guard_trace;
+    let guard_trace = guard_trace(&input, guard);
 
     let mut valid_obstacle_positions = HashSet::new();
     for trace in guard_trace.iter() {
@@ -181,6 +162,28 @@ pub fn part_two(input: &str) -> Option<usize> {
     }
 
     Some(valid_obstacle_positions.len())
+}
+
+fn guard_trace(input: &Vec<Vec<char>>, mut guard: Guard) -> HashSet<Guard> {
+    let mut guard_trace: HashSet<Guard> = HashSet::new();
+    guard_trace.insert(guard);
+    loop {
+        if guard_at_border(&input, &guard)
+        {
+            guard_trace.remove(&guard);
+            return guard_trace;
+        }
+
+        let (next_row, next_column) = guard.next_pos();
+
+        if input[next_row][next_column] == '#' {
+            guard.direction = guard.direction.turn_right()
+        } else {
+            guard.row = next_row;
+            guard.column = next_column;
+            guard_trace.insert(guard);
+        }
+    }
 }
 
 fn guard_at_border(map: &Vec<Vec<char>>, guard: &Guard) -> bool {
