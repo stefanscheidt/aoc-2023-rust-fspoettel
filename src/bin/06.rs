@@ -142,6 +142,7 @@ pub fn part_two(input: &str) -> Option<usize> {
             || guard.column == 0
             || guard.column == input[guard.row].len() - 1
         {
+            guardTrace.remove(&guard);
             break;
         }
 
@@ -152,13 +153,54 @@ pub fn part_two(input: &str) -> Option<usize> {
             Direction::Right => (guard.row, guard.column + 1),
         };
 
-        if &input[next_row][next_column..next_column + 1] == "#" {
+        if input[next_row][next_column] == '#' {
             guard.direction = guard.direction.turn_right()
         } else {
             guard.row = next_row;
             guard.column = next_column;
             guardTrace.insert(guard);
         }
+    }
+
+    let mut valid_obstacle_positions = HashSet::new();
+    for trace in guardTrace.iter() {
+        let mut test_input = input.clone();
+        let (next_row, next_column) = match trace.direction {
+            Direction::Up => (guard.row - 1, guard.column),
+            Direction::Down => (guard.row + 1, guard.column),
+            Direction::Left => (guard.row, guard.column - 1),
+            Direction::Right => (guard.row, guard.column + 1),
+        };
+        test_input[next_row][next_column] = '#';
+
+        let test_trace = guardTrace.clone();
+        loop {
+            if guard.row == 0
+                || guard.row == input.len() - 1
+                || guard.column == 0
+                || guard.column == input[guard.row].len() - 1
+            {
+                guardTrace.remove(&guard);
+                break;
+            }
+
+            let (next_row, next_column) = match guard.direction {
+                Direction::Up => (guard.row - 1, guard.column),
+                Direction::Down => (guard.row + 1, guard.column),
+                Direction::Left => (guard.row, guard.column - 1),
+                Direction::Right => (guard.row, guard.column + 1),
+            };
+
+            if input[next_row][next_column] == '#' {
+                guard.direction = guard.direction.turn_right()
+            } else {
+                guard.row = next_row;
+                guard.column = next_column;
+                guardTrace.insert(guard);
+            }
+        }
+
+
     }
 
     Some(guardTrace.len())
