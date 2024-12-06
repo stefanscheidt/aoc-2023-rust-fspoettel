@@ -64,25 +64,10 @@ impl Guard {
 }
 
 pub fn part_one(input: &str) -> Option<usize> {
-    let input = input.lines().collect::<Vec<_>>();
-    let mut guard = None;
+    let input = parse(input);
 
-    'rowloop: for (row, l) in input.iter().enumerate() {
-        for column in 0..l.len() {
-            let s = &l[column..column + 1];
-            let d = Direction::from_str(s);
-            if let Ok(direction) = d {
-                guard = Some(Guard {
-                    row,
-                    column,
-                    direction,
-                });
-                break 'rowloop;
-            }
-        }
-    }
+    let mut guard = find_guard(&input);
 
-    let mut guard = guard.unwrap();
     let mut positions = HashSet::new();
     positions.insert((guard.row, guard.column));
 
@@ -95,14 +80,9 @@ pub fn part_one(input: &str) -> Option<usize> {
             break;
         }
 
-        let (next_row, next_column) = match guard.direction {
-            Direction::Up => (guard.row - 1, guard.column),
-            Direction::Down => (guard.row + 1, guard.column),
-            Direction::Left => (guard.row, guard.column - 1),
-            Direction::Right => (guard.row, guard.column + 1),
-        };
+        let (next_row, next_column) = guard.next_pos();
 
-        if &input[next_row][next_column..next_column + 1] == "#" {
+        if input[next_row][next_column] == '#' {
             guard.direction = guard.direction.turn_right()
         } else {
             guard.row = next_row;
@@ -121,15 +101,22 @@ pub fn part_one(input: &str) -> Option<usize> {
      */
 }
 
+fn parse(input: &str) -> Vec<Vec<char>> {
+    input
+        .lines()
+        .map(|line| line.chars().collect())
+        .collect::<Vec<Vec<_>>>()
+}
+
 pub fn part_two(input: &str) -> Option<usize> {
     let input = input
         .lines()
         .map(|line| line.chars().collect())
         .collect::<Vec<Vec<_>>>();
 
-    let mut guard = find_guard(&input);
+    let guard = find_guard(&input);
 
-    let guard_trace = guard_trace(&input, guard);
+    let guard_trace = guard_trace(&input, guard, true);
 
     let mut valid_obstacle_positions = HashSet::new();
     for trace in guard_trace.iter() {
@@ -164,13 +151,13 @@ pub fn part_two(input: &str) -> Option<usize> {
     Some(valid_obstacle_positions.len())
 }
 
-fn guard_trace(input: &Vec<Vec<char>>, mut guard: Guard) -> HashSet<Guard> {
+fn guard_trace(input: &Vec<Vec<char>>, mut guard: Guard, remove_latest: bool) -> HashSet<Guard> {
     let mut guard_trace: HashSet<Guard> = HashSet::new();
     guard_trace.insert(guard);
     loop {
         if guard_at_border(&input, &guard)
         {
-            guard_trace.remove(&guard);
+            if remove_latest { guard_trace.remove(&guard); }
             return guard_trace;
         }
 
