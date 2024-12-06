@@ -45,14 +45,6 @@ struct Guard {
 }
 
 impl Guard {
-    fn new(row: usize, column: usize) -> Self {
-        Self {
-            row,
-            column,
-            direction: Direction::Up,
-        }
-    }
-
     fn next_pos(&self) -> (usize, usize) {
         match self.direction {
             Direction::Up => (self.row - 1, self.column),
@@ -90,41 +82,76 @@ pub fn part_two(input: &str) -> Option<usize> {
         .map(|line| line.chars().collect())
         .collect::<Vec<Vec<_>>>();
 
-    let guard_trace = guard_trace(&input, find_guard(&input), true, |g| g);
-
+    let guard = find_guard(&input);
+    // let guard_trace = guard_trace(&input, find_guard(&input), true, |g| g);
     let mut valid_obstacle_positions = HashSet::new();
-    for trace in guard_trace.iter() {
-        let (obstacle_row, obstacle_column) = trace.next_pos();
-        // We also have the position in our trace list just before an obstacle/before a turn.
-        // No sense replacing the already existing obstacle, we can just skip past that.
-        if input[obstacle_row][obstacle_column] != '.' { continue; }
+    // BRUTEFORCE
+    for (row, l) in input.iter().enumerate() {
+        'obs: for (column, c) in l.iter().enumerate() {
+            // valid obstacle position
+            if *c == '.' {
+                let mut test_input = input.clone();
+                test_input[row][column] = '#';
+                let mut test_guard = guard.clone();
+                let mut test_trace = HashSet::new();
+                test_trace.insert(test_guard);
+                'test: loop {
+                    if guard_at_border(&test_input, &test_guard) {
+                        break 'test;
+                    }
+                    let (next_row, next_column) = test_guard.next_pos();
 
-        let mut test_input = input.clone();
-        test_input[obstacle_row][obstacle_column] = '#';
-
-        let mut test_guard = trace.clone();
-
-        let mut test_trace = HashSet::new();
-        test_trace.insert(test_guard);
-        loop {
-            if guard_at_border(&test_input, &test_guard) {
-                break;
-            }
-
-            let (next_row, next_column) = test_guard.next_pos();
-
-            if test_input[next_row][next_column] == '#' {
-                test_guard.direction = test_guard.direction.turn_right()
-            } else {
-                test_guard.row = next_row;
-                test_guard.column = next_column;
-                if !test_trace.insert(test_guard) {
-                    valid_obstacle_positions.insert((obstacle_row, obstacle_column));
-                    break;
+                    if test_input[next_row][next_column] == '#' {
+                        test_guard.direction = test_guard.direction.turn_right()
+                    } else {
+                        test_guard.row = next_row;
+                        test_guard.column = next_column;
+                        if !test_trace.insert(test_guard) {
+                            valid_obstacle_positions.insert((row, column));
+                            break 'test;
+                        }
+                    }
                 }
             }
         }
     }
+
+    // BRUTEFORCE END
+
+    // for trace in guard_trace.iter() {
+    //     let (obstacle_row, obstacle_column) = trace.next_pos();
+    //     // We also have the position just before an obstacle/before a turn in our trace list.
+    //     // No sense replacing the already existing obstacle, we can just skip past that.
+    //     if input[obstacle_row][obstacle_column] != '.' {
+    //         continue;
+    //     }
+    //
+    //     let mut test_input = input.clone();
+    //     test_input[obstacle_row][obstacle_column] = '#';
+    //
+    //     let mut test_guard = trace.clone();
+    //
+    //     let mut test_trace = HashSet::new();
+    //     test_trace.insert(test_guard);
+    //     loop {
+    //         if guard_at_border(&test_input, &test_guard) {
+    //             break;
+    //         }
+    //
+    //         let (next_row, next_column) = test_guard.next_pos();
+    //
+    //         if test_input[next_row][next_column] == '#' {
+    //             test_guard.direction = test_guard.direction.turn_right()
+    //         } else {
+    //             test_guard.row = next_row;
+    //             test_guard.column = next_column;
+    //             if !test_trace.insert(test_guard) {
+    //                 valid_obstacle_positions.insert((obstacle_row, obstacle_column));
+    //                 break;
+    //             }
+    //         }
+    //     }
+    // }
 
     Some(valid_obstacle_positions.len())
 }
