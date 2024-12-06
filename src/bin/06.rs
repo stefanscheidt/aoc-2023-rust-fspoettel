@@ -68,7 +68,14 @@ pub fn part_one(input: &str) -> Option<usize> {
             break;
         }
         
+        let (row, column) = match guard.direction {
+            Direction::Up => (guard.row - 1, guard.column),
+            Direction::Down => (guard.row + 1, guard.column),
+            Direction::Left => (guard.row, guard.column - 1),
+            Direction::Right => (guard.row, guard.column + 1),
+        };
         
+        let s = dbg!(&input[row][column..column + 1]);
         
     } 
     
