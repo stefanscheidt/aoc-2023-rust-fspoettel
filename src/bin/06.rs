@@ -20,6 +20,7 @@ impl Direction {
             Direction::Left => Direction::Up,
         }
     }
+
 }
 
 impl FromStr for Direction {
@@ -49,6 +50,15 @@ impl Guard {
             row,
             column,
             direction: Direction::Up,
+        }
+    }
+
+    fn next_pos(&self) -> (usize, usize) {
+        match self.direction {
+            Direction::Up => (self.row - 1, self.column),
+            Direction::Down => (self.row + 1, self.column),
+            Direction::Left => (self.row, self.column - 1),
+            Direction::Right => (self.row, self.column + 1),
         }
     }
 }
@@ -118,7 +128,7 @@ pub fn part_two(input: &str) -> Option<usize> {
         .collect::<Vec<Vec<_>>>();
 
     let mut guard = find_guard(&input);
-    
+
     let mut guard_trace = HashSet::new();
     guard_trace.insert(guard);
     loop {
@@ -128,12 +138,7 @@ pub fn part_two(input: &str) -> Option<usize> {
             break;
         }
 
-        let (next_row, next_column) = match guard.direction {
-            Direction::Up => (guard.row - 1, guard.column),
-            Direction::Down => (guard.row + 1, guard.column),
-            Direction::Left => (guard.row, guard.column - 1),
-            Direction::Right => (guard.row, guard.column + 1),
-        };
+        let (next_row, next_column) = guard.next_pos();
 
         if input[next_row][next_column] == '#' {
             guard.direction = guard.direction.turn_right()
@@ -149,12 +154,7 @@ pub fn part_two(input: &str) -> Option<usize> {
     for trace in guard_trace.iter() {
         let mut test_input = input.clone();
         let mut test_guard = trace.clone();
-        let (obstacle_row, obstacle_column) = match trace.direction {
-            Direction::Up => (trace.row - 1, trace.column),
-            Direction::Down => (trace.row + 1, trace.column),
-            Direction::Left => (trace.row, trace.column - 1),
-            Direction::Right => (trace.row, trace.column + 1),
-        };
+        let (obstacle_row, obstacle_column) = trace.next_pos();
         test_input[obstacle_row][obstacle_column] = '#';
 
         let mut test_trace = HashSet::new();
@@ -165,12 +165,7 @@ pub fn part_two(input: &str) -> Option<usize> {
                 break;
             }
 
-            let (next_row, next_column) = match test_guard.direction {
-                Direction::Up => (test_guard.row - 1, test_guard.column),
-                Direction::Down => (test_guard.row + 1, test_guard.column),
-                Direction::Left => (test_guard.row, test_guard.column - 1),
-                Direction::Right => (test_guard.row, test_guard.column + 1),
-            };
+            let (next_row, next_column) = test_guard.next_pos();
 
             if test_input[next_row][next_column] == '#' {
                 test_guard.direction = test_guard.direction.turn_right()
