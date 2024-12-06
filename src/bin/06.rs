@@ -89,27 +89,28 @@ pub fn part_two(input: &str) -> Option<usize> {
     for (row, l) in input.iter().enumerate() {
         'obs: for (column, c) in l.iter().enumerate() {
             // valid obstacle position
-            if *c == '.' {
-                let mut test_input = input.clone();
-                test_input[row][column] = '#';
-                let mut test_guard = guard.clone();
-                let mut test_trace = HashSet::new();
-                test_trace.insert(test_guard);
-                'test: loop {
-                    if guard_at_border(&test_input, &test_guard) {
-                        break 'test;
-                    }
-                    let (next_row, next_column) = test_guard.next_pos();
+            if *c != '.' {
+                continue;
+            }
+            let mut test_input = input.clone();
+            test_input[row][column] = '#';
+            let mut test_guard = guard.clone();
+            let mut test_trace = HashSet::new();
+            test_trace.insert(test_guard);
+            'test: loop {
+                if guard_at_border(&test_input, &test_guard) {
+                    break 'test;
+                }
+                let (next_row, next_column) = test_guard.next_pos();
 
-                    if test_input[next_row][next_column] == '#' {
-                        test_guard.direction = test_guard.direction.turn_right()
-                    } else {
-                        test_guard.row = next_row;
-                        test_guard.column = next_column;
-                        if !test_trace.insert(test_guard) {
-                            valid_obstacle_positions.insert((row, column));
-                            break 'test;
-                        }
+                if test_input[next_row][next_column] == '#' {
+                    test_guard.direction = test_guard.direction.turn_right()
+                } else {
+                    test_guard.row = next_row;
+                    test_guard.column = next_column;
+                    if !test_trace.insert(test_guard) {
+                        valid_obstacle_positions.insert((row, column));
+                        break 'test;
                     }
                 }
             }
