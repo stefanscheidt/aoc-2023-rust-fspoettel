@@ -129,7 +129,7 @@ fn bruteforce_solver(input: &Vec<Vec<char>>, guard: Guard) -> usize {
 }
 
 fn guard_trace_solver(input: &Vec<Vec<char>>, guard: Guard) -> usize {
-    let guard_trace = guard_trace(&input, find_guard(&input), true, |g| g);
+    let guard_trace = guard_trace(&input, guard, true, |g| g);
     let mut valid_obstacle_positions = HashSet::new();
     for trace in guard_trace.iter() {
         let (obstacle_row, obstacle_column) = trace.next_pos();
