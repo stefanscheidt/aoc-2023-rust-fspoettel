@@ -65,8 +65,7 @@ impl Guard {
 
 pub fn part_one(input: &str) -> Option<usize> {
     let input = parse(input);
-    let guard = find_guard(&input);
-    let guard_trace = guard_trace(&input, guard, false, |g| (g.row, g.column));
+    let guard_trace = guard_trace(&input, find_guard(&input), false, |g| (g.row, g.column));
 
     Some(guard_trace.len())
 
@@ -91,16 +90,19 @@ pub fn part_two(input: &str) -> Option<usize> {
         .map(|line| line.chars().collect())
         .collect::<Vec<Vec<_>>>();
 
-    let guard = find_guard(&input);
-
-    let guard_trace = guard_trace(&input, guard, true, |g| g);
+    let guard_trace = guard_trace(&input, find_guard(&input), true, |g| g);
 
     let mut valid_obstacle_positions = HashSet::new();
     for trace in guard_trace.iter() {
-        let mut test_input = input.clone();
-        let mut test_guard = trace.clone();
         let (obstacle_row, obstacle_column) = trace.next_pos();
+        // We also have the position in our trace list just before an obstacle/before a turn.
+        // No sense replacing the already existing obstacle, we can just skip past that.
+        if input[obstacle_row][obstacle_column] != '.' { continue; }
+
+        let mut test_input = input.clone();
         test_input[obstacle_row][obstacle_column] = '#';
+
+        let mut test_guard = trace.clone();
 
         let mut test_trace = HashSet::new();
         test_trace.insert(test_guard);
