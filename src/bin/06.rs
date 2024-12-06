@@ -87,7 +87,7 @@ pub fn part_two(input: &str) -> Option<usize> {
     let mut valid_obstacle_positions = HashSet::new();
     // BRUTEFORCE
     for (row, l) in input.iter().enumerate() {
-        'obs: for (column, c) in l.iter().enumerate() {
+        for (column, c) in l.iter().enumerate() {
             // valid obstacle position
             if *c != '.' {
                 continue;
