@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::str::FromStr;
 
 advent_of_code::solution!(6);
@@ -39,27 +40,40 @@ impl Guard {
     }
 }
 
-pub fn part_one(input: &str) -> Option<u32> {
+pub fn part_one(input: &str) -> Option<usize> {
     let input = input.lines().collect::<Vec<_>>();
-    let mut guard_postion = None;
-
-    for (row, l) in input.iter().enumerate() {
+    let mut guard = None;
+    
+    'rowloop: for (row, l) in input.iter().enumerate() {
         for column in 0..l.len() {
             let s = dbg!(&l[column..column + 1]);
             let d = Direction::from_str(s);
             if let Ok(direction) = d {
-                guard_postion = Some(Guard {
+                guard = Some(Guard {
                     row,
                     column,
                     direction,
                 });
-                break;
+                break 'rowloop;
             }
         }
     }
 
-    None
+    let guard = guard.unwrap();
+    let mut positions = HashSet::new();
+    positions.insert((guard.row, guard.column));
 
+    loop {
+        if guard.row == 0 || guard.row == input.len() || guard.column == 0 || guard.column == input[guard.row].len() {
+            break;
+        }
+        
+        
+        
+    } 
+    
+    Some(positions.len())
+    
     /*
     (0,0)  (0,column)
     (1,0)   (1,column)
