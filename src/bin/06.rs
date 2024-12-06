@@ -20,7 +20,6 @@ impl Direction {
             Direction::Left => Direction::Up,
         }
     }
-
 }
 
 impl FromStr for Direction {
@@ -67,31 +66,16 @@ pub fn part_one(input: &str) -> Option<usize> {
     let input = parse(input);
 
     let mut guard = find_guard(&input);
+    let guard_trace = guard_trace(
+        &input,
+        guard,
+        false,
+        |g| (g.row, g.column),
+        |s, it| s.insert(it),
+        |s, it| s.remove(it)
+    );
 
-    let mut positions = HashSet::new();
-    positions.insert((guard.row, guard.column));
-
-    loop {
-        if guard.row == 0
-            || guard.row == input.len() - 1
-            || guard.column == 0
-            || guard.column == input[guard.row].len() - 1
-        {
-            break;
-        }
-
-        let (next_row, next_column) = guard.next_pos();
-
-        if input[next_row][next_column] == '#' {
-            guard.direction = guard.direction.turn_right()
-        } else {
-            guard.row = next_row;
-            guard.column = next_column;
-            positions.insert((next_row, next_column));
-        }
-    }
-
-    Some(positions.len())
+    Some(guard_trace.len())
 
     /*
     (0,0)  (0,column)
@@ -116,7 +100,14 @@ pub fn part_two(input: &str) -> Option<usize> {
 
     let guard = find_guard(&input);
 
-    let guard_trace = guard_trace(&input, guard, true);
+    let guard_trace = guard_trace(
+        &input,
+        guard,
+        true,
+        |g| g,
+    |s, it| s.insert(it),
+        |s, it| s.remove(it)
+    );
 
     let mut valid_obstacle_positions = HashSet::new();
     for trace in guard_trace.iter() {
@@ -128,8 +119,7 @@ pub fn part_two(input: &str) -> Option<usize> {
         let mut test_trace = HashSet::new();
         test_trace.insert(test_guard);
         loop {
-            if guard_at_border(&test_input, &test_guard)
-            {
+            if guard_at_border(&test_input, &test_guard) {
                 break;
             }
 
@@ -151,13 +141,22 @@ pub fn part_two(input: &str) -> Option<usize> {
     Some(valid_obstacle_positions.len())
 }
 
-fn guard_trace(input: &Vec<Vec<char>>, mut guard: Guard, remove_latest: bool) -> HashSet<Guard> {
-    let mut guard_trace: HashSet<Guard> = HashSet::new();
-    guard_trace.insert(guard);
+fn guard_trace<T>(
+    input: &Vec<Vec<char>>,
+    mut guard: Guard,
+    remove_latest: bool,
+    extract: impl Fn(Guard) -> T,
+    insert: impl Fn(&mut HashSet<T>, T) -> bool,
+    remove: impl Fn(&mut HashSet<T>, &T) -> bool
+) -> HashSet<T> {
+    let mut guard_trace = HashSet::new();
+    insert(&mut guard_trace, extract(guard));
     loop {
-        if guard_at_border(&input, &guard)
-        {
-            if remove_latest { guard_trace.remove(&guard); }
+        if guard_at_border(&input, &guard) {
+            if remove_latest {
+                remove(&mut guard_trace, &extract(guard));
+                // guard_trace.remove(&guard);
+            }
             return guard_trace;
         }
 
@@ -168,7 +167,8 @@ fn guard_trace(input: &Vec<Vec<char>>, mut guard: Guard, remove_latest: bool) ->
         } else {
             guard.row = next_row;
             guard.column = next_column;
-            guard_trace.insert(guard);
+            insert(&mut guard_trace, extract(guard));
+            // guard_trace.insert(guard);
         }
     }
 }
