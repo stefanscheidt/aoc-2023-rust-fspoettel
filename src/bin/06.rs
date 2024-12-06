@@ -133,16 +133,16 @@ pub fn part_two(input: &str) -> Option<usize> {
     }
 
     let mut guard = guard.unwrap();
-    let mut guardTrace = HashSet::new();
-    guardTrace.insert(guard);
-
+    
+    let mut guard_trace = HashSet::new();
+    guard_trace.insert(guard);
     loop {
         if guard.row == 0
             || guard.row == input.len() - 1
             || guard.column == 0
             || guard.column == input[guard.row].len() - 1
         {
-            guardTrace.remove(&guard);
+            guard_trace.remove(&guard);
             break;
         }
 
@@ -158,29 +158,30 @@ pub fn part_two(input: &str) -> Option<usize> {
         } else {
             guard.row = next_row;
             guard.column = next_column;
-            guardTrace.insert(guard);
+            guard_trace.insert(guard);
         }
     }
+    let guard_trace = guard_trace;
 
     let mut valid_obstacle_positions = HashSet::new();
-    for trace in guardTrace.iter() {
+    for trace in guard_trace.iter() {
         let mut test_input = input.clone();
-        let (next_row, next_column) = match trace.direction {
+        let mut test_guard = trace.clone();
+        let (obstacle_row, obstacle_column) = match trace.direction {
             Direction::Up => (guard.row - 1, guard.column),
             Direction::Down => (guard.row + 1, guard.column),
             Direction::Left => (guard.row, guard.column - 1),
             Direction::Right => (guard.row, guard.column + 1),
         };
-        test_input[next_row][next_column] = '#';
+        test_input[obstacle_row][obstacle_column] = '#';
 
-        let test_trace = guardTrace.clone();
+        let mut test_trace = HashSet::new();
         loop {
-            if guard.row == 0
-                || guard.row == input.len() - 1
-                || guard.column == 0
-                || guard.column == input[guard.row].len() - 1
+            if test_guard.row == 0
+                || test_guard.row == input.len() - 1
+                || test_guard.column == 0
+                || test_guard.column == input[guard.row].len() - 1
             {
-                guardTrace.remove(&guard);
                 break;
             }
 
@@ -190,20 +191,22 @@ pub fn part_two(input: &str) -> Option<usize> {
                 Direction::Left => (guard.row, guard.column - 1),
                 Direction::Right => (guard.row, guard.column + 1),
             };
-
+            
             if input[next_row][next_column] == '#' {
-                guard.direction = guard.direction.turn_right()
+                test_guard.direction = test_guard.direction.turn_right()
             } else {
-                guard.row = next_row;
-                guard.column = next_column;
-                guardTrace.insert(guard);
+                test_guard.row = next_row;
+                test_guard.column = next_column;
+                if !test_trace.insert(guard) {
+                    valid_obstacle_positions.insert((obstacle_row, obstacle_column));
+                    break;
+                }
             }
         }
-
-
+        
     }
 
-    Some(guardTrace.len())
+    Some(valid_obstacle_positions.len())
 }
 
 #[cfg(test)]
