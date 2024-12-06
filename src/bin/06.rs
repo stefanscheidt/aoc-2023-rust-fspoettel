@@ -83,7 +83,15 @@ pub fn part_two(input: &str) -> Option<usize> {
         .collect::<Vec<Vec<_>>>();
 
     let guard = find_guard(&input);
-    // let guard_trace = guard_trace(&input, find_guard(&input), true, |g| g);
+
+    let valid_obstacles_brute = bruteforce_solver(&input, guard);
+    let valid_obstacles = guard_trace_solver(&input, guard);
+
+    println!("Valid Obstacles: {valid_obstacles_brute} (bruteforce), {valid_obstacles} (guard trace)");
+    Some(valid_obstacles_brute)
+}
+
+fn bruteforce_solver(input: &Vec<Vec<char>>, guard: Guard) -> usize {
     let mut valid_obstacle_positions = HashSet::new();
     // BRUTEFORCE
     for (row, l) in input.iter().enumerate() {
@@ -116,45 +124,45 @@ pub fn part_two(input: &str) -> Option<usize> {
             }
         }
     }
-
+    valid_obstacle_positions.len()
     // BRUTEFORCE END
+}
 
-    // for trace in guard_trace.iter() {
-    //     let (obstacle_row, obstacle_column) = trace.next_pos();
-    //     // We also have the position just before an obstacle/before a turn in our trace list.
-    //     // No sense replacing the already existing obstacle, we can just skip past that.
-    //     if input[obstacle_row][obstacle_column] != '.' {
-    //         continue;
-    //     }
-    //
-    //     let mut test_input = input.clone();
-    //     test_input[obstacle_row][obstacle_column] = '#';
-    //
-    //     let mut test_guard = trace.clone();
-    //
-    //     let mut test_trace = HashSet::new();
-    //     test_trace.insert(test_guard);
-    //     loop {
-    //         if guard_at_border(&test_input, &test_guard) {
-    //             break;
-    //         }
-    //
-    //         let (next_row, next_column) = test_guard.next_pos();
-    //
-    //         if test_input[next_row][next_column] == '#' {
-    //             test_guard.direction = test_guard.direction.turn_right()
-    //         } else {
-    //             test_guard.row = next_row;
-    //             test_guard.column = next_column;
-    //             if !test_trace.insert(test_guard) {
-    //                 valid_obstacle_positions.insert((obstacle_row, obstacle_column));
-    //                 break;
-    //             }
-    //         }
-    //     }
-    // }
+fn guard_trace_solver(input: &Vec<Vec<char>>, guard: Guard) -> usize {
+    let guard_trace = guard_trace(&input, find_guard(&input), true, |g| g);
+    let mut valid_obstacle_positions = HashSet::new();
+    for trace in guard_trace.iter() {
+        let (obstacle_row, obstacle_column) = trace.next_pos();
+        // We also have the position just before an obstacle/before a turn in our trace list.
+        // No sense replacing the already existing obstacle, we can just skip past that.
+        if input[obstacle_row][obstacle_column] != '.' {
+            continue;
+        }
 
-    Some(valid_obstacle_positions.len())
+        let mut test_input = input.clone();
+        test_input[obstacle_row][obstacle_column] = '#';
+        let mut test_guard = guard.clone();
+        let mut test_trace = HashSet::new();
+        test_trace.insert(test_guard);
+        'test: loop {
+            if guard_at_border(&test_input, &test_guard) {
+                break 'test;
+            }
+            let (next_row, next_column) = test_guard.next_pos();
+
+            if test_input[next_row][next_column] == '#' {
+                test_guard.direction = test_guard.direction.turn_right()
+            } else {
+                test_guard.row = next_row;
+                test_guard.column = next_column;
+                if !test_trace.insert(test_guard) {
+                    valid_obstacle_positions.insert((obstacle_row, obstacle_column));
+                    break 'test;
+                }
+            }
+        }
+    }
+    valid_obstacle_positions.len()
 }
 
 fn guard_trace<T>(
