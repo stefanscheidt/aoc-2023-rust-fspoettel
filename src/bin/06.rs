@@ -10,6 +10,17 @@ enum Direction {
     Right,
 }
 
+impl Direction {
+    fn turn_right(&self)-> Self {
+        match self {
+            Direction::Up => Direction::Right,
+            Direction::Right => Direction::Down,
+            Direction::Down => Direction::Left,
+            Direction::Left => Direction::Up
+        }
+    }
+}
+
 impl FromStr for Direction {
     type Err = ();
 
@@ -43,10 +54,10 @@ impl Guard {
 pub fn part_one(input: &str) -> Option<usize> {
     let input = input.lines().collect::<Vec<_>>();
     let mut guard = None;
-    
+
     'rowloop: for (row, l) in input.iter().enumerate() {
         for column in 0..l.len() {
-            let s = dbg!(&l[column..column + 1]);
+            let s = &l[column..column + 1];
             let d = Direction::from_str(s);
             if let Ok(direction) = d {
                 guard = Some(Guard {
@@ -59,28 +70,33 @@ pub fn part_one(input: &str) -> Option<usize> {
         }
     }
 
-    let guard = guard.unwrap();
+    let mut guard = guard.unwrap();
     let mut positions = HashSet::new();
     positions.insert((guard.row, guard.column));
 
     loop {
-        if guard.row == 0 || guard.row == input.len() || guard.column == 0 || guard.column == input[guard.row].len() {
+        if guard.row == 0 || guard.row == input.len()-1 || guard.column == 0 || guard.column == input[guard.row].len()-1 {
             break;
         }
-        
-        let (row, column) = match guard.direction {
+
+        let (next_row, next_column) = match guard.direction {
             Direction::Up => (guard.row - 1, guard.column),
             Direction::Down => (guard.row + 1, guard.column),
             Direction::Left => (guard.row, guard.column - 1),
             Direction::Right => (guard.row, guard.column + 1),
         };
-        
-        let s = dbg!(&input[row][column..column + 1]);
-        
-    } 
-    
+
+        if &input[next_row][next_column..next_column + 1] == "#" {
+            guard.direction = guard.direction.turn_right()
+        } else {
+            guard.row = next_row;
+            guard.column = next_column;
+            positions.insert((next_row, next_column));
+        }
+    }
+
     Some(positions.len())
-    
+
     /*
     (0,0)  (0,column)
     (1,0)   (1,column)
