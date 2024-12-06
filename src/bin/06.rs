@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::hash::Hash;
 use std::str::FromStr;
 
 advent_of_code::solution!(6);
@@ -64,16 +65,8 @@ impl Guard {
 
 pub fn part_one(input: &str) -> Option<usize> {
     let input = parse(input);
-
-    let mut guard = find_guard(&input);
-    let guard_trace = guard_trace(
-        &input,
-        guard,
-        false,
-        |g| (g.row, g.column),
-        |s, it| s.insert(it),
-        |s, it| s.remove(it)
-    );
+    let guard = find_guard(&input);
+    let guard_trace = guard_trace(&input, guard, false, |g| (g.row, g.column));
 
     Some(guard_trace.len())
 
@@ -100,14 +93,7 @@ pub fn part_two(input: &str) -> Option<usize> {
 
     let guard = find_guard(&input);
 
-    let guard_trace = guard_trace(
-        &input,
-        guard,
-        true,
-        |g| g,
-    |s, it| s.insert(it),
-        |s, it| s.remove(it)
-    );
+    let guard_trace = guard_trace(&input, guard, true, |g| g);
 
     let mut valid_obstacle_positions = HashSet::new();
     for trace in guard_trace.iter() {
@@ -146,16 +132,17 @@ fn guard_trace<T>(
     mut guard: Guard,
     remove_latest: bool,
     extract: impl Fn(Guard) -> T,
-    insert: impl Fn(&mut HashSet<T>, T) -> bool,
-    remove: impl Fn(&mut HashSet<T>, &T) -> bool
-) -> HashSet<T> {
+) -> HashSet<T>
+where
+    T: Eq,
+    T: Hash,
+{
     let mut guard_trace = HashSet::new();
-    insert(&mut guard_trace, extract(guard));
+    guard_trace.insert(extract(guard));
     loop {
         if guard_at_border(&input, &guard) {
             if remove_latest {
-                remove(&mut guard_trace, &extract(guard));
-                // guard_trace.remove(&guard);
+                guard_trace.remove(&extract(guard));
             }
             return guard_trace;
         }
@@ -167,8 +154,7 @@ fn guard_trace<T>(
         } else {
             guard.row = next_row;
             guard.column = next_column;
-            insert(&mut guard_trace, extract(guard));
-            // guard_trace.insert(guard);
+            guard_trace.insert(extract(guard));
         }
     }
 }
