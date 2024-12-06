@@ -116,31 +116,13 @@ pub fn part_two(input: &str) -> Option<usize> {
         .lines()
         .map(|line| line.chars().collect())
         .collect::<Vec<Vec<_>>>();
-    let mut guard = None;
 
-    'rowloop: for (row, l) in input.iter().enumerate() {
-        for (column, c) in l.iter().enumerate() {
-            let d = Direction::from_str(&c.to_string());
-            if let Ok(direction) = d {
-                guard = Some(Guard {
-                    row,
-                    column,
-                    direction,
-                });
-                break 'rowloop;
-            }
-        }
-    }
-
-    let mut guard = guard.unwrap();
-
+    let mut guard = find_guard(&input);
+    
     let mut guard_trace = HashSet::new();
     guard_trace.insert(guard);
     loop {
-        if guard.row == 0
-            || guard.row == input.len() - 1
-            || guard.column == 0
-            || guard.column == input[guard.row].len() - 1
+        if guard_at_border(&input, &guard)
         {
             guard_trace.remove(&guard);
             break;
@@ -176,11 +158,9 @@ pub fn part_two(input: &str) -> Option<usize> {
         test_input[obstacle_row][obstacle_column] = '#';
 
         let mut test_trace = HashSet::new();
+        test_trace.insert(test_guard);
         loop {
-            if test_guard.row == 0
-                || test_guard.row == test_input.len() - 1
-                || test_guard.column == 0
-                || test_guard.column == test_input[test_guard.row].len() - 1
+            if guard_at_border(&test_input, &test_guard)
             {
                 break;
             }
@@ -203,10 +183,32 @@ pub fn part_two(input: &str) -> Option<usize> {
                 }
             }
         }
-
     }
 
     Some(valid_obstacle_positions.len())
+}
+
+fn guard_at_border(map: &Vec<Vec<char>>, guard: &Guard) -> bool {
+    guard.row == 0
+        || guard.row == map.len() - 1
+        || guard.column == 0
+        || guard.column == map[guard.row].len() - 1
+}
+
+fn find_guard(input: &Vec<Vec<char>>) -> Guard {
+    for (row, l) in input.iter().enumerate() {
+        for (column, c) in l.iter().enumerate() {
+            let d = Direction::from_str(&c.to_string());
+            if let Ok(direction) = d {
+                return Guard {
+                    row,
+                    column,
+                    direction,
+                };
+            }
+        }
+    }
+    panic!("Guard not found");
 }
 
 #[cfg(test)]
