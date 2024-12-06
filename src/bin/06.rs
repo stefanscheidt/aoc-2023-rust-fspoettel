@@ -3,6 +3,7 @@ use std::str::FromStr;
 
 advent_of_code::solution!(6);
 
+#[derive(Eq, PartialEq, Hash, Copy, Clone)]
 enum Direction {
     Up,
     Down,
@@ -11,12 +12,12 @@ enum Direction {
 }
 
 impl Direction {
-    fn turn_right(&self)-> Self {
+    fn turn_right(&self) -> Self {
         match self {
             Direction::Up => Direction::Right,
             Direction::Right => Direction::Down,
             Direction::Down => Direction::Left,
-            Direction::Left => Direction::Up
+            Direction::Left => Direction::Up,
         }
     }
 }
@@ -35,6 +36,7 @@ impl FromStr for Direction {
     }
 }
 
+#[derive(Eq, PartialEq, Hash, Copy, Clone)]
 struct Guard {
     row: usize,
     column: usize,
@@ -75,7 +77,11 @@ pub fn part_one(input: &str) -> Option<usize> {
     positions.insert((guard.row, guard.column));
 
     loop {
-        if guard.row == 0 || guard.row == input.len()-1 || guard.column == 0 || guard.column == input[guard.row].len()-1 {
+        if guard.row == 0
+            || guard.row == input.len() - 1
+            || guard.column == 0
+            || guard.column == input[guard.row].len() - 1
+        {
             break;
         }
 
@@ -105,8 +111,57 @@ pub fn part_one(input: &str) -> Option<usize> {
      */
 }
 
-pub fn part_two(input: &str) -> Option<u32> {
-    None
+pub fn part_two(input: &str) -> Option<usize> {
+    let input = input
+        .lines()
+        .map(|line| line.chars().collect())
+        .collect::<Vec<Vec<_>>>();
+    let mut guard = None;
+
+    'rowloop: for (row, l) in input.iter().enumerate() {
+        for (column, c) in l.iter().enumerate() {
+            let d = Direction::from_str(&c.to_string());
+            if let Ok(direction) = d {
+                guard = Some(Guard {
+                    row,
+                    column,
+                    direction,
+                });
+                break 'rowloop;
+            }
+        }
+    }
+
+    let mut guard = guard.unwrap();
+    let mut guardTrace = HashSet::new();
+    guardTrace.insert(guard);
+
+    loop {
+        if guard.row == 0
+            || guard.row == input.len() - 1
+            || guard.column == 0
+            || guard.column == input[guard.row].len() - 1
+        {
+            break;
+        }
+
+        let (next_row, next_column) = match guard.direction {
+            Direction::Up => (guard.row - 1, guard.column),
+            Direction::Down => (guard.row + 1, guard.column),
+            Direction::Left => (guard.row, guard.column - 1),
+            Direction::Right => (guard.row, guard.column + 1),
+        };
+
+        if &input[next_row][next_column..next_column + 1] == "#" {
+            guard.direction = guard.direction.turn_right()
+        } else {
+            guard.row = next_row;
+            guard.column = next_column;
+            guardTrace.insert(guard);
+        }
+    }
+
+    Some(guardTrace.len())
 }
 
 #[cfg(test)]
