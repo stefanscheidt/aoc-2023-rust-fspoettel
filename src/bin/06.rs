@@ -57,7 +57,7 @@ impl Guard {
 
 pub fn part_one(input: &str) -> Option<usize> {
     let input = parse(input);
-    let guard_trace = guard_trace(&input, find_guard(&input), false, |g| (g.row, g.column));
+    let guard_trace = guard_trace(&input, find_guard(&input), |g| (g.row, g.column));
 
     Some(guard_trace.len())
 
@@ -84,11 +84,9 @@ pub fn part_two(input: &str) -> Option<usize> {
 
     let guard = find_guard(&input);
 
-    let valid_obstacles_brute = bruteforce_solver(&input, guard);
     let valid_obstacles = guard_trace_solver(&input, guard);
 
-    println!("Valid Obstacles: {valid_obstacles_brute} (bruteforce), {valid_obstacles} (guard trace)");
-    Some(valid_obstacles_brute)
+    Some(valid_obstacles)
 }
 
 fn bruteforce_solver(input: &Vec<Vec<char>>, guard: Guard) -> usize {
@@ -129,21 +127,15 @@ fn bruteforce_solver(input: &Vec<Vec<char>>, guard: Guard) -> usize {
 }
 
 fn guard_trace_solver(input: &Vec<Vec<char>>, guard: Guard) -> usize {
-    let guard_trace = guard_trace(&input, guard, true, |g| g);
-    let mut valid_obstacle_positions = HashSet::new();
-    for trace in guard_trace.iter() {
-        let (obstacle_row, obstacle_column) = trace.next_pos();
-        // We also have the position just before an obstacle/before a turn in our trace list.
-        // No sense replacing the already existing obstacle, we can just skip past that.
-        if input[obstacle_row][obstacle_column] != '.' {
-            continue;
-        }
-
+    let mut guard_trace = guard_trace(input, guard, |g| (g.row, g.column));
+    guard_trace.remove(&(guard.row, guard.column)); // Remove first position
+    guard_trace.into_iter().map(|(obstacle_row, obstacle_column)| {
         let mut test_input = input.clone();
         test_input[obstacle_row][obstacle_column] = '#';
-        let mut test_guard = guard.clone();
+        let mut test_guard = guard;
         let mut test_trace = HashSet::new();
         test_trace.insert(test_guard);
+        let mut result = 0;
         'test: loop {
             if guard_at_border(&test_input, &test_guard) {
                 break 'test;
@@ -156,19 +148,18 @@ fn guard_trace_solver(input: &Vec<Vec<char>>, guard: Guard) -> usize {
                 test_guard.row = next_row;
                 test_guard.column = next_column;
                 if !test_trace.insert(test_guard) {
-                    valid_obstacle_positions.insert((obstacle_row, obstacle_column));
+                    result = 1;
                     break 'test;
                 }
             }
         }
-    }
-    valid_obstacle_positions.len()
+        result
+    }).sum()
 }
 
 fn guard_trace<T>(
     input: &Vec<Vec<char>>,
     mut guard: Guard,
-    remove_latest: bool,
     extract: impl Fn(Guard) -> T,
 ) -> HashSet<T>
 where
@@ -178,10 +169,7 @@ where
     let mut guard_trace = HashSet::new();
     guard_trace.insert(extract(guard));
     loop {
-        if guard_at_border(&input, &guard) {
-            if remove_latest {
-                guard_trace.remove(&extract(guard));
-            }
+        if guard_at_border(input, &guard) {
             return guard_trace;
         }
 
